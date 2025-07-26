@@ -1,0 +1,272 @@
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Calculator, History, Lightbulb, Zap } from "lucide-react";
+import { toast } from "sonner";
+import * as math from "mathjs";
+
+interface SolutionStep {
+  step: string;
+  expression: string;
+  explanation: string;
+}
+
+interface Solution {
+  original: string;
+  result: string;
+  steps: SolutionStep[];
+  type: string;
+}
+
+export const MathSolver = () => {
+  const [expression, setExpression] = useState("");
+  const [solution, setSolution] = useState<Solution | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [history, setHistory] = useState<Solution[]>([]);
+
+  const solveExpression = async () => {
+    if (!expression.trim()) {
+      toast.error("Please enter a mathematical expression");
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      // Basic solving using mathjs
+      const result = math.evaluate(expression);
+      const steps = generateSteps(expression, result);
+      
+      const newSolution: Solution = {
+        original: expression,
+        result: result.toString(),
+        steps,
+        type: detectExpressionType(expression)
+      };
+
+      setSolution(newSolution);
+      setHistory(prev => [newSolution, ...prev.slice(0, 9)]); // Keep last 10
+      toast.success("Solution found!");
+      
+    } catch (error) {
+      toast.error("Invalid mathematical expression");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const generateSteps = (expr: string, result: any): SolutionStep[] => {
+    // Simple step generation for demo
+    const steps: SolutionStep[] = [];
+    
+    if (expr.includes("=")) {
+      // Equation solving
+      steps.push({
+        step: "1",
+        expression: expr,
+        explanation: "Original equation"
+      });
+      
+      steps.push({
+        step: "2", 
+        expression: `x = ${result}`,
+        explanation: "Solved for x"
+      });
+    } else {
+      // Expression evaluation
+      steps.push({
+        step: "1",
+        expression: expr,
+        explanation: "Original expression"
+      });
+      
+      steps.push({
+        step: "2",
+        expression: result.toString(),
+        explanation: "Simplified result"
+      });
+    }
+    
+    return steps;
+  };
+
+  const detectExpressionType = (expr: string): string => {
+    if (expr.includes("=")) return "Equation";
+    if (expr.includes("x^2") || expr.includes("**2")) return "Quadratic";
+    if (expr.includes("sin") || expr.includes("cos") || expr.includes("tan")) return "Trigonometric";
+    if (expr.includes("log") || expr.includes("ln")) return "Logarithmic";
+    if (expr.includes("sqrt")) return "Radical";
+    return "Arithmetic";
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      solveExpression();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-secondary p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Calculator className="w-8 h-8 text-math-primary" />
+            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Advanced Math Solver
+            </h1>
+          </div>
+          <p className="text-muted-foreground text-lg">
+            Solve complex mathematical equations with step-by-step solutions
+          </p>
+        </div>
+
+        {/* Input Section */}
+        <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-sm">
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                value={expression}
+                onChange={(e) => setExpression(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Enter your mathematical expression (e.g., 2x + 5 = 15, x^2 - 4x + 3 = 0)"
+                className="text-lg bg-background/50 border-border/50 focus:border-math-primary transition-all duration-300"
+              />
+              <Button 
+                onClick={solveExpression}
+                disabled={isLoading}
+                className="bg-math-primary hover:bg-math-primary/90 text-primary-foreground px-8 transition-all duration-300 hover:shadow-math"
+              >
+                {isLoading ? (
+                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                ) : (
+                  <Zap className="w-4 h-4" />
+                )}
+                Solve
+              </Button>
+            </div>
+            
+            <div className="flex gap-2 flex-wrap">
+              {["x^2 + 2x - 8 = 0", "2x + 5 = 15", "sin(x) = 0.5", "log(100)"].map((example) => (
+                <Button
+                  key={example}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setExpression(example)}
+                  className="text-xs border-border/50 hover:border-math-primary/50 hover:bg-math-primary/10"
+                >
+                  {example}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Solution Display */}
+          <div className="lg:col-span-2">
+            {solution && (
+              <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-sm animate-math-reveal">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-semibold flex items-center gap-2">
+                      <Lightbulb className="w-5 h-5 text-math-secondary" />
+                      Solution
+                    </h3>
+                    <Badge variant="outline" className="border-math-primary text-math-primary">
+                      {solution.type}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="p-4 bg-background/30 rounded-lg border border-border/30">
+                      <p className="text-sm text-muted-foreground mb-1">Original Expression:</p>
+                      <p className="text-lg font-mono">{solution.original}</p>
+                    </div>
+                    
+                    <div className="p-4 bg-math-primary/10 rounded-lg border border-math-primary/30">
+                      <p className="text-sm text-muted-foreground mb-1">Result:</p>
+                      <p className="text-2xl font-bold text-math-primary font-mono">{solution.result}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-lg">Step-by-Step Solution:</h4>
+                    {solution.steps.map((step, index) => (
+                      <div 
+                        key={index}
+                        className="p-4 bg-background/20 rounded-lg border border-border/30 transition-all duration-300 hover:bg-background/30"
+                        style={{ animationDelay: `${index * 200}ms` }}
+                      >
+                        <div className="flex gap-3">
+                          <Badge variant="outline" className="border-math-secondary text-math-secondary">
+                            Step {step.step}
+                          </Badge>
+                          <div className="flex-1">
+                            <p className="font-mono text-lg mb-1">{step.expression}</p>
+                            <p className="text-sm text-muted-foreground">{step.explanation}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            )}
+            
+            {!solution && (
+              <Card className="p-12 bg-gradient-card border-border/50 backdrop-blur-sm text-center">
+                <Calculator className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Ready to Solve</h3>
+                <p className="text-muted-foreground">
+                  Enter a mathematical expression above and click solve to see step-by-step solutions
+                </p>
+              </Card>
+            )}
+          </div>
+
+          {/* History Sidebar */}
+          <div className="lg:col-span-1">
+            <Card className="p-6 bg-gradient-card border-border/50 backdrop-blur-sm h-fit">
+              <div className="flex items-center gap-2 mb-4">
+                <History className="w-5 h-5 text-math-secondary" />
+                <h3 className="font-semibold">Recent Solutions</h3>
+              </div>
+              
+              <ScrollArea className="h-96">
+                {history.length > 0 ? (
+                  <div className="space-y-3">
+                    {history.map((item, index) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-background/20 rounded-lg border border-border/30 cursor-pointer transition-all duration-300 hover:bg-background/30 hover:border-math-primary/30"
+                        onClick={() => setExpression(item.original)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <Badge variant="outline" size="sm" className="text-xs">
+                            {item.type}
+                          </Badge>
+                        </div>
+                        <p className="text-sm font-mono truncate mb-1">{item.original}</p>
+                        <p className="text-xs text-math-primary font-semibold">= {item.result}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground py-8">
+                    <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No solutions yet</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
