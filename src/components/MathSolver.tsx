@@ -1,31 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calculator, History, Lightbulb, Zap } from "lucide-react";
+import { Calculator, History, Lightbulb, Zap, BookOpen, Target } from "lucide-react";
 import { toast } from "sonner";
-import * as math from "mathjs";
-
-interface SolutionStep {
-  step: string;
-  expression: string;
-  explanation: string;
-}
-
-interface Solution {
-  original: string;
-  result: string;
-  steps: SolutionStep[];
-  type: string;
-}
+import { CalculusEngine, type CalculusSolution } from "@/utils/calculusEngine";
 
 export const MathSolver = () => {
   const [expression, setExpression] = useState("");
-  const [solution, setSolution] = useState<Solution | null>(null);
+  const [solution, setSolution] = useState<CalculusSolution | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [history, setHistory] = useState<Solution[]>([]);
+  const [history, setHistory] = useState<CalculusSolution[]>([]);
+
+  useEffect(() => {
+    // Initialize the calculus engine
+    CalculusEngine.init();
+  }, []);
 
   const solveExpression = async () => {
     if (!expression.trim()) {
@@ -36,72 +28,21 @@ export const MathSolver = () => {
     setIsLoading(true);
     
     try {
-      // Basic solving using mathjs
-      const result = math.evaluate(expression);
-      const steps = generateSteps(expression, result);
-      
-      const newSolution: Solution = {
-        original: expression,
-        result: result.toString(),
-        steps,
-        type: detectExpressionType(expression)
-      };
+      // Use advanced calculus engine
+      const newSolution = CalculusEngine.solveExpression(expression);
 
       setSolution(newSolution);
       setHistory(prev => [newSolution, ...prev.slice(0, 9)]); // Keep last 10
       toast.success("Solution found!");
       
     } catch (error) {
-      toast.error("Invalid mathematical expression");
+      toast.error(error instanceof Error ? error.message : "Invalid mathematical expression");
       console.error(error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const generateSteps = (expr: string, result: any): SolutionStep[] => {
-    // Simple step generation for demo
-    const steps: SolutionStep[] = [];
-    
-    if (expr.includes("=")) {
-      // Equation solving
-      steps.push({
-        step: "1",
-        expression: expr,
-        explanation: "Original equation"
-      });
-      
-      steps.push({
-        step: "2", 
-        expression: `x = ${result}`,
-        explanation: "Solved for x"
-      });
-    } else {
-      // Expression evaluation
-      steps.push({
-        step: "1",
-        expression: expr,
-        explanation: "Original expression"
-      });
-      
-      steps.push({
-        step: "2",
-        expression: result.toString(),
-        explanation: "Simplified result"
-      });
-    }
-    
-    return steps;
-  };
-
-  const detectExpressionType = (expr: string): string => {
-    if (expr.includes("=")) return "Equation";
-    if (expr.includes("x^2") || expr.includes("**2")) return "Quadratic";
-    if (expr.includes("sin") || expr.includes("cos") || expr.includes("tan")) return "Trigonometric";
-    if (expr.includes("log") || expr.includes("ln")) return "Logarithmic";
-    if (expr.includes("sqrt")) return "Radical";
-    return "Arithmetic";
-  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -120,9 +61,9 @@ export const MathSolver = () => {
               Advanced Math Solver
             </h1>
           </div>
-          <p className="text-muted-foreground text-lg">
-            Solve complex mathematical equations with step-by-step solutions
-          </p>
+            <p className="text-muted-foreground text-lg">
+              Advanced calculus solver with derivatives, integrals, and step-by-step solutions
+            </p>
         </div>
 
         {/* Input Section */}
@@ -133,7 +74,7 @@ export const MathSolver = () => {
                 value={expression}
                 onChange={(e) => setExpression(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Enter your mathematical expression (e.g., 2x + 5 = 15, x^2 - 4x + 3 = 0)"
+                placeholder="Enter calculus expression (e.g., d/dx(x^3), integral(x^2), x^2 + y^2 = 25)"
                 className="text-lg bg-background/50 border-border/50 focus:border-math-primary transition-all duration-300"
               />
               <Button 
@@ -150,18 +91,52 @@ export const MathSolver = () => {
               </Button>
             </div>
             
-            <div className="flex gap-2 flex-wrap">
-              {["x^2 + 2x - 8 = 0", "2x + 5 = 15", "sin(x) = 0.5", "log(100)"].map((example) => (
-                <Button
-                  key={example}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setExpression(example)}
-                  className="text-xs border-border/50 hover:border-math-primary/50 hover:bg-math-primary/10"
-                >
-                  {example}
-                </Button>
-              ))}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <BookOpen className="w-4 h-4" />
+                <span>Calculus Examples:</span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  "d/dx(x^3 + 2x^2 - 5x + 1)",
+                  "integral(x^2 + 3x)",
+                  "d/dx(sin(x^2))",
+                  "integral(x*e^x)"
+                ].map((example) => (
+                  <Button
+                    key={example}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExpression(example)}
+                    className="text-xs border-border/50 hover:border-math-primary/50 hover:bg-math-primary/10"
+                  >
+                    {example}
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
+                <Target className="w-4 h-4" />
+                <span>Advanced Examples:</span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  "x^2 + y^2 = 25",
+                  "integral(x*sin(x))",
+                  "d/dx(ln(x^2 + 1))",
+                  "integral(1/(x^2 + 1))"
+                ].map((example) => (
+                  <Button
+                    key={example}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExpression(example)}
+                    className="text-xs border-border/50 hover:border-math-primary/50 hover:bg-math-primary/10"
+                  >
+                    {example}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </Card>
@@ -177,9 +152,16 @@ export const MathSolver = () => {
                       <Lightbulb className="w-5 h-5 text-math-secondary" />
                       Solution
                     </h3>
-                    <Badge variant="outline" className="border-math-primary text-math-primary">
-                      {solution.type}
-                    </Badge>
+                    <div className="flex gap-2">
+                      <Badge variant="outline" className="border-math-primary text-math-primary">
+                        {solution.type}
+                      </Badge>
+                      {solution.method && (
+                        <Badge variant="outline" className="border-math-secondary text-math-secondary">
+                          {solution.method}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="space-y-3">
