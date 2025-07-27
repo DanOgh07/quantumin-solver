@@ -13,8 +13,8 @@ interface LLMSettingsProps {
 }
 
 export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
-  const [apiKey, setApiKey] = useState(localStorage.getItem('llm-api-key') || '');
-  const [model, setModel] = useState(localStorage.getItem('llm-model') || 'meta-llama/llama-3.2-90b-vision-instruct');
+  const [apiKey, setApiKey] = useState(localStorage.getItem('llm-api-key') || 'sk-697cb101cc4549e48222b965b0778934');
+  const [model, setModel] = useState(localStorage.getItem('llm-model') || 'deepseek-ai/DeepSeek-R1');
   const [showKey, setShowKey] = useState(false);
   const [isConnected, setIsConnected] = useState(!!localStorage.getItem('llm-api-key'));
 
