@@ -4,19 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calculator, History, Lightbulb, Zap, BookOpen, Target } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calculator, History, Lightbulb, Zap, BookOpen, Target, Brain, Dice6 } from "lucide-react";
 import { toast } from "sonner";
 import { CalculusEngine, type CalculusSolution } from "@/utils/calculusEngine";
+import { LLMService } from "@/services/llmService";
+import { LLMSettings } from "@/components/LLMSettings";
+import { AIChat } from "@/components/AIChat";
 
 export const MathSolver = () => {
   const [expression, setExpression] = useState("");
   const [solution, setSolution] = useState<CalculusSolution | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState<CalculusSolution[]>([]);
+  const [llmService, setLLMService] = useState<LLMService | null>(null);
+  const [isNaturalLanguage, setIsNaturalLanguage] = useState(false);
 
   useEffect(() => {
     // Initialize the calculus engine
     CalculusEngine.init();
+    
+    // Check if LLM config exists
+    const apiKey = localStorage.getItem('llm-api-key');
+    const model = localStorage.getItem('llm-model');
+    if (apiKey && model) {
+      setLLMService(new LLMService({ apiKey, model: model as any }));
+    }
   }, []);
 
   const solveExpression = async () => {
@@ -26,10 +39,19 @@ export const MathSolver = () => {
     }
 
     setIsLoading(true);
+    let finalExpression = expression;
     
     try {
+      // Check if this looks like natural language and we have LLM service
+      if (llmService && isNaturalLanguageInput(expression)) {
+        setIsNaturalLanguage(true);
+        toast.info("Converting natural language to math expression...");
+        finalExpression = await llmService.parseNaturalLanguage(expression);
+        toast.success("Converted to: " + finalExpression);
+      }
+
       // Use advanced calculus engine
-      const newSolution = CalculusEngine.solveExpression(expression);
+      const newSolution = CalculusEngine.solveExpression(finalExpression);
 
       setSolution(newSolution);
       setHistory(prev => [newSolution, ...prev.slice(0, 9)]); // Keep last 10
@@ -38,6 +60,44 @@ export const MathSolver = () => {
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Invalid mathematical expression");
       console.error(error);
+    } finally {
+      setIsLoading(false);
+      setIsNaturalLanguage(false);
+    }
+  };
+
+  const isNaturalLanguageInput = (input: string): boolean => {
+    const mathSymbols = /[+\-*/^()=∫∂]/;
+    const mathFunctions = /\b(sin|cos|tan|log|ln|exp|sqrt|integral|derivative|d\/dx)\b/i;
+    const naturalLanguageWords = /\b(find|solve|what|is|the|of|derivative|integral|integrate|differentiate)\b/i;
+    
+    return naturalLanguageWords.test(input) && (!mathSymbols.test(input) || naturalLanguageWords.test(input));
+  };
+
+  const handleLLMConfig = (config: { apiKey: string; model: string } | null) => {
+    if (config) {
+      setLLMService(new LLMService({ 
+        apiKey: config.apiKey, 
+        model: config.model as 'meta-llama/llama-3.2-90b-vision-instruct' | 'deepseek/deepseek-chat'
+      }));
+    } else {
+      setLLMService(null);
+    }
+  };
+
+  const generatePracticeProblem = async () => {
+    if (!llmService) {
+      toast.error("Connect AI assistant to generate problems");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const problem = await llmService.generateProblem("calculus", "intermediate");
+      setExpression(problem.problem);
+      toast.success("Practice problem generated!");
+    } catch (error) {
+      toast.error("Failed to generate problem");
     } finally {
       setIsLoading(false);
     }
@@ -74,21 +134,36 @@ export const MathSolver = () => {
                 value={expression}
                 onChange={(e) => setExpression(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Enter calculus expression (e.g., d/dx(x^3), integral(x^2), x^2 + y^2 = 25)"
+                placeholder={llmService ? "Enter math expression or natural language (e.g., 'find the derivative of x cubed')" : "Enter calculus expression (e.g., d/dx(x^3), integral(x^2), x^2 + y^2 = 25)"}
                 className="text-lg bg-background/50 border-border/50 focus:border-math-primary transition-all duration-300"
               />
-              <Button 
-                onClick={solveExpression}
-                disabled={isLoading}
-                className="bg-math-primary hover:bg-math-primary/90 text-primary-foreground px-8 transition-all duration-300 hover:shadow-math"
-              >
-                {isLoading ? (
-                  <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
-                ) : (
-                  <Zap className="w-4 h-4" />
+              <div className="flex gap-2">
+                <Button 
+                  onClick={solveExpression}
+                  disabled={isLoading}
+                  className="bg-math-primary hover:bg-math-primary/90 text-primary-foreground px-6 transition-all duration-300 hover:shadow-math"
+                >
+                  {isLoading ? (
+                    <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                  ) : isNaturalLanguage ? (
+                    <Brain className="w-4 h-4" />
+                  ) : (
+                    <Zap className="w-4 h-4" />
+                  )}
+                  {isNaturalLanguage ? 'Converting...' : 'Solve'}
+                </Button>
+                
+                {llmService && (
+                  <Button
+                    variant="outline"
+                    onClick={generatePracticeProblem}
+                    disabled={isLoading}
+                    className="border-math-primary/50 hover:bg-math-primary/10"
+                  >
+                    <Dice6 className="w-4 h-4" />
+                  </Button>
                 )}
-                Solve
-              </Button>
+              </div>
             </div>
             
             <div className="space-y-3">
@@ -141,7 +216,15 @@ export const MathSolver = () => {
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Tabs defaultValue="solver" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="solver">Solver</TabsTrigger>
+            <TabsTrigger value="ai-chat">AI Chat</TabsTrigger>
+            <TabsTrigger value="settings">AI Settings</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="solver" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Solution Display */}
           <div className="lg:col-span-2">
             {solution && (
@@ -246,8 +329,22 @@ export const MathSolver = () => {
                 )}
               </ScrollArea>
             </Card>
+            </div>
           </div>
-        </div>
+        </TabsContent>
+        
+        <TabsContent value="ai-chat">
+          <AIChat 
+            llmService={llmService}
+            currentExpression={expression}
+            currentSolution={solution?.result}
+          />
+        </TabsContent>
+        
+        <TabsContent value="settings">
+          <LLMSettings onConfigChange={handleLLMConfig} />
+        </TabsContent>
+      </Tabs>
       </div>
     </div>
   );
