@@ -1,6 +1,6 @@
 export interface LLMConfig {
   apiKey: string;
-  model: 'meta-llama/llama-3.2-90b-vision-instruct' | 'deepseek/deepseek-chat';
+  model: 'microsoft/DialoGPT-medium' | 'gpt2' | 'facebook/blenderbot-400M-distill';
   baseUrl?: string;
 }
 
@@ -38,23 +38,25 @@ export class LLMService {
   constructor(config: LLMConfig) {
     this.config = {
       ...config,
-      baseUrl: config.baseUrl || 'https://openrouter.ai/api/v1'
+      baseUrl: config.baseUrl || 'https://api-inference.huggingface.co/models'
     };
   }
 
   private async makeRequest(messages: Array<{role: string; content: string}>): Promise<string> {
-    const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
+    // Convert messages to a single prompt for Hugging Face
+    const prompt = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
+    
+    const response = await fetch(`${this.config.baseUrl}/${this.config.model}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.config.apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': window.location.origin,
       },
       body: JSON.stringify({
-        model: this.config.model,
-        messages,
-        temperature: 0.7,
-        max_tokens: 2000,
+        inputs: prompt,
+        options: {
+          wait_for_model: true
+        }
       }),
     });
 
@@ -64,7 +66,7 @@ export class LLMService {
     }
 
     const data = await response.json();
-    return data.choices[0]?.message?.content || '';
+    return Array.isArray(data) ? data[0]?.generated_text || '' : data.generated_text || '';
   }
 
   async parseNaturalLanguage(input: string): Promise<string> {

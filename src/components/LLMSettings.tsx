@@ -80,18 +80,21 @@ export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="meta-llama/llama-3.2-90b-vision-instruct">
-                      Llama 3.2 90B
+                    <SelectItem value="microsoft/DialoGPT-medium">
+                      DialoGPT Medium
                     </SelectItem>
-                    <SelectItem value="deepseek/deepseek-chat">
-                      Deepseek Chat
+                    <SelectItem value="gpt2">
+                      GPT-2
+                    </SelectItem>
+                    <SelectItem value="facebook/blenderbot-400M-distill">
+                      BlenderBot
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label htmlFor="apiKey">OpenRouter API Key</Label>
+                <Label htmlFor="apiKey">Hugging Face API Key</Label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Input
@@ -99,7 +102,7 @@ export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
                       type={showKey ? "text" : "password"}
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
-                      placeholder="sk-or-v1-..."
+                      placeholder="hf_..."
                       className="pr-10"
                     />
                     <Button
@@ -116,12 +119,12 @@ export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
                 <p className="text-xs text-muted-foreground mt-1">
                   Get your free API key at{" "}
                   <a 
-                    href="https://openrouter.ai" 
+                    href="https://huggingface.co/settings/tokens" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-math-primary hover:underline"
                   >
-                    openrouter.ai
+                    huggingface.co
                   </a>
                 </p>
               </div>
@@ -137,7 +140,7 @@ export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
               <div>
                 <p className="text-sm font-medium">AI Assistant Connected</p>
                 <p className="text-xs text-muted-foreground">
-                  Model: {model.includes('llama') ? 'Llama 3.2 90B' : 'Deepseek Chat'}
+                  Model: {model.includes('DialoGPT') ? 'DialoGPT Medium' : model.includes('gpt2') ? 'GPT-2' : 'BlenderBot'}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={handleDisconnect}>
