@@ -14,7 +14,7 @@ interface LLMSettingsProps {
 
 export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
   const [apiKey, setApiKey] = useState(localStorage.getItem('llm-api-key') || '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');
-  const [model, setModel] = useState(localStorage.getItem('llm-model') || 'meta-llama/Llama-3.2-90B-Vision-Instruct');
+  const [model, setModel] = useState(localStorage.getItem('llm-model') || 'meta-llama/Meta-Llama-3.2-8B-Instruct');
   const [showKey, setShowKey] = useState(false);
   const [isConnected, setIsConnected] = useState(!!localStorage.getItem('llm-api-key'));
 
@@ -26,7 +26,7 @@ export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
 
     localStorage.setItem('llm-api-key', apiKey);
     localStorage.setItem('llm-model', model);
-    
+
     setIsConnected(true);
     onConfigChange({ apiKey, model });
     toast.success("LLM configuration saved!");
@@ -35,11 +35,20 @@ export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
   const handleDisconnect = () => {
     localStorage.removeItem('llm-api-key');
     localStorage.removeItem('llm-model');
-    
+
     setApiKey('');
     setIsConnected(false);
     onConfigChange(null);
     toast.success("LLM disconnected");
+  };
+
+  const readableModel = (model: string) => {
+    if (model.includes('Meta-Llama-3.2-1B')) return 'LLaMA 3.2 1B';
+    if (model.includes('Meta-Llama-3.2-8B')) return 'LLaMA 3.2 8B';
+    if (model.includes('DialoGPT')) return 'DialoGPT Medium';
+    if (model.includes('gpt2')) return 'GPT-2';
+    if (model.includes('blenderbot')) return 'BlenderBot';
+    return model;
   };
 
   return (
@@ -80,6 +89,15 @@ export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="meta-llama/Meta-Llama-3.2-1B-Instruct">
+                      LLaMA 3.2 1B Instruct (Free)
+                    </SelectItem>
+                    <SelectItem value="meta-llama/Meta-Llama-3.2-8B-Instruct">
+                      LLaMA 3.2 8B Instruct (Free)
+                    </SelectItem>
+                    <SelectItem value="mistralai/Mistral-7B-Instruct-v0.1">
+                      Mistral 7B Instruct (Free)
+                    </SelectItem>
                     <SelectItem value="microsoft/DialoGPT-medium">
                       DialoGPT Medium
                     </SelectItem>
@@ -140,14 +158,14 @@ export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
               <div>
                 <p className="text-sm font-medium">AI Assistant Connected</p>
                 <p className="text-xs text-muted-foreground">
-                  Model: {model.includes('DialoGPT') ? 'DialoGPT Medium' : model.includes('gpt2') ? 'GPT-2' : 'BlenderBot'}
+                  Model: {readableModel(model)}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={handleDisconnect}>
                 Disconnect
               </Button>
             </div>
-            
+
             <div className="p-3 bg-background/20 rounded-lg border border-border/30">
               <p className="text-xs text-muted-foreground">
                 ✨ AI features are now active! Try typing natural language like "find the derivative of x squared"
