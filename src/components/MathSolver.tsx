@@ -78,7 +78,7 @@ export const MathSolver = () => {
     if (config) {
       setLLMService(new LLMService({ 
         apiKey: config.apiKey, 
-        model: config.model as 'meta-llama/Llama-3.2-90B-Vision-Instruct' | 'microsoft/DialoGPT-medium'
+        model: config.model as 'microsoft/DialoGPT-medium' | 'gpt2' | 'facebook/blenderbot-400M-distill'
       }));
     } else {
       setLLMService(null);

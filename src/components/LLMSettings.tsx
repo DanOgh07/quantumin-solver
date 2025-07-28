@@ -14,7 +14,7 @@ interface LLMSettingsProps {
 
 export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
   const [apiKey, setApiKey] = useState(localStorage.getItem('llm-api-key') || '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');
-  const [model, setModel] = useState(localStorage.getItem('llm-model') || 'meta-llama/Llama-3.2-90B-Vision-Instruct');
+  const [model, setModel] = useState(localStorage.getItem('llm-model') || 'microsoft/DialoGPT-medium');
   const [showKey, setShowKey] = useState(false);
   const [isConnected, setIsConnected] = useState(!!localStorage.getItem('llm-api-key'));
 
@@ -80,11 +80,14 @@ export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="meta-llama/Llama-3.2-90B-Vision-Instruct">
-                      Llama 3.2 90B
-                    </SelectItem>
                     <SelectItem value="microsoft/DialoGPT-medium">
                       DialoGPT Medium
+                    </SelectItem>
+                    <SelectItem value="gpt2">
+                      GPT-2
+                    </SelectItem>
+                    <SelectItem value="facebook/blenderbot-400M-distill">
+                      BlenderBot
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -137,7 +140,7 @@ export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
               <div>
                 <p className="text-sm font-medium">AI Assistant Connected</p>
                 <p className="text-xs text-muted-foreground">
-                  Model: {model.includes('llama') ? 'Llama 3.2 90B' : 'DialoGPT Medium'}
+                  Model: {model.includes('DialoGPT') ? 'DialoGPT Medium' : model.includes('gpt2') ? 'GPT-2' : 'BlenderBot'}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={handleDisconnect}>

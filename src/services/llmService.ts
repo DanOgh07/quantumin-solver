@@ -1,6 +1,6 @@
 export interface LLMConfig {
   apiKey: string;
-  model: 'meta-llama/Llama-3.2-90B-Vision-Instruct' | 'microsoft/DialoGPT-medium';
+  model: 'microsoft/DialoGPT-medium' | 'gpt2' | 'facebook/blenderbot-400M-distill';
   baseUrl?: string;
 }
 
@@ -54,10 +54,8 @@ export class LLMService {
       },
       body: JSON.stringify({
         inputs: prompt,
-        parameters: {
-          temperature: 0.7,
-          max_new_tokens: 2000,
-          return_full_text: false
+        options: {
+          wait_for_model: true
         }
       }),
     });
