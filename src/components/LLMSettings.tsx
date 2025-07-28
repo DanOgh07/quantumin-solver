@@ -13,7 +13,7 @@ interface LLMSettingsProps {
 }
 
 export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
-  const [apiKey, setApiKey] = useState(localStorage.getItem('llm-api-key') || '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');
+  const [apiKey, setApiKey] = useState(localStorage.getItem('llm-api-key') || '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');
   const [model, setModel] = useState(localStorage.getItem('llm-model') || 'meta-llama/Meta-Llama-3.2-8B-Instruct');
   const [showKey, setShowKey] = useState(false);
   const [isConnected, setIsConnected] = useState(!!localStorage.getItem('llm-api-key'));
