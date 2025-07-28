@@ -32,21 +32,22 @@ export interface GeneratedProblem {
   solution: string;
 }
 
-// Get the default token from env-demo.js at runtime (if present)
-const defaultEnvKey = (window as any).env?.HF_API_KEY || '';
+// Load API key from runtime environment
+const runtimeEnvKey = window.env?.HF_API_KEY || '';
+
 
 export class LLMService {
   private config: LLMConfig;
 
   constructor(config: LLMConfig) {
     this.config = {
-      apiKey: config.apiKey || defaultEnvKey,
+      apiKey: config.apiKey || runtimeEnvKey,
       model: config.model,
       baseUrl: config.baseUrl || 'https://api-inference.huggingface.co/models',
     };
 
     if (!this.config.apiKey) {
-      console.warn('⚠️ No API key provided for Hugging Face. Please check env-demo.js or localStorage.');
+      console.warn('⚠️ No API key provided for Hugging Face. Check env-demo.js or pass it explicitly.');
     }
   }
 
