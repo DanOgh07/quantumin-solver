@@ -53,7 +53,7 @@ export class LLMService {
 
   private async makeRequest(messages: Array<{ role: string; content: string }>): Promise<string> {
     const prompt = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
-
+    console.log("HF API Key being used:", this.config.apiKey);
     const response = await fetch(`${this.config.baseUrl}/${this.config.model}`, {
       method: 'POST',
       headers: {
