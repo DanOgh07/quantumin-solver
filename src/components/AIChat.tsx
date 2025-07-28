@@ -8,6 +8,8 @@ import { MessageSquare, Send, Bot, User, Lightbulb, BookOpen } from "lucide-reac
 import { LLMService } from "@/services/llmService";
 import { toast } from "sonner";
 
+type MessageType = 'explanation' | 'tutoring' | 'problem';
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -34,13 +36,13 @@ export const AIChat = ({ llmService, currentExpression, currentSolution }: AICha
     }
   }, [messages]);
 
-  const addMessage = (role: 'user' | 'assistant', content: string, type?: string) => {
+  const addMessage = (role: 'user' | 'assistant', content: string, type?: MessageType) => {
     const message: Message = {
       id: crypto.randomUUID(),
       role,
       content,
       timestamp: new Date(),
-      type: type as any,
+      type,
     };
     setMessages(prev => [...prev, message]);
   };
