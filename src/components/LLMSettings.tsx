@@ -7,24 +7,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Settings, Eye, EyeOff, Brain } from "lucide-react";
 import { toast } from "sonner";
+import React, { useEffect } from 'react';
+
 
 interface LLMSettingsProps {
   onConfigChange: (config: { apiKey: string; model: string } | null) => void;
 }
 
 export const LLMSettings = ({ onConfigChange }: LLMSettingsProps) => {
-  const defaultEnvKey = (window as any)?.env?.HF_API_KEY || '';
-
+  const getHFEnvKey = () => (window as { env?: { HF_API_KEY?: string } })?.env?.HF_API_KEY || '';
+  const defaultEnvKey = getHFEnvKey();
+  
   const [apiKey, setApiKey] = useState(() => {
     return localStorage.getItem('llm-api-key') || defaultEnvKey;
   });
 
   useEffect(() => {
-    if (apiKey && apiKey !== defaultEnvKey) {
+    if (apiKey && apiKey !== getHFEnvKey()) {
       localStorage.setItem('llm-api-key', apiKey);
     }
   }, [apiKey]);
-  
+
   const [model, setModel] = useState(localStorage.getItem('llm-model') || 'meta-llama/Meta-Llama-3.2-8B-Instruct');
   const [showKey, setShowKey] = useState(false);
   const [isConnected, setIsConnected] = useState(!!localStorage.getItem('llm-api-key'));
