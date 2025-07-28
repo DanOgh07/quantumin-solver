@@ -78,7 +78,7 @@ export const MathSolver = () => {
     if (config) {
       setLLMService(new LLMService({ 
         apiKey: config.apiKey, 
-        model: config.model as 'meta-llama/llama-3.2-90b-vision-instruct' | 'deepseek/deepseek-chat'
+        model: config.model as 'meta-llama/Llama-3.2-90B-Vision-Instruct' | 'microsoft/DialoGPT-medium'
       }));
     } else {
       setLLMService(null);
