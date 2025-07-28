@@ -1,6 +1,6 @@
 export interface LLMConfig {
-  apiKey: string;
-  model: 'microsoft/DialoGPT-medium' | 'gpt2' | 'facebook/blenderbot-400M-distill';
+  apiKey?: string;
+  model: 'meta-llama/Meta-Llama-3.2-8B-Instruct';
   baseUrl?: string;
 }
 
@@ -32,20 +32,27 @@ export interface GeneratedProblem {
   solution: string;
 }
 
+// Get the default token from env-demo.js at runtime (if present)
+const defaultEnvKey = (window as any).env?.HF_API_KEY || '';
+
 export class LLMService {
   private config: LLMConfig;
 
   constructor(config: LLMConfig) {
     this.config = {
-      ...config,
-      baseUrl: config.baseUrl || 'https://api-inference.huggingface.co/models'
+      apiKey: config.apiKey || defaultEnvKey,
+      model: config.model,
+      baseUrl: config.baseUrl || 'https://api-inference.huggingface.co/models',
     };
+
+    if (!this.config.apiKey) {
+      console.warn('⚠️ No API key provided for Hugging Face. Please check env-demo.js or localStorage.');
+    }
   }
 
-  private async makeRequest(messages: Array<{role: string; content: string}>): Promise<string> {
-    // Convert messages to a single prompt for Hugging Face
+  private async makeRequest(messages: Array<{ role: string; content: string }>): Promise<string> {
     const prompt = messages.map(msg => `${msg.role}: ${msg.content}`).join('\n\n');
-    
+
     const response = await fetch(`${this.config.baseUrl}/${this.config.model}`, {
       method: 'POST',
       headers: {
@@ -55,8 +62,8 @@ export class LLMService {
       body: JSON.stringify({
         inputs: prompt,
         options: {
-          wait_for_model: true
-        }
+          wait_for_model: true,
+        },
       }),
     });
 
@@ -81,12 +88,12 @@ Examples:
 - "what is the derivative of sine of x" → "d/dx(sin(x))"
 - "solve x squared plus 2x equals 8" → "x^2 + 2x = 8"
 
-Only return the mathematical expression, nothing else.`
+Only return the mathematical expression, nothing else.`,
       },
       {
         role: 'user',
-        content: input
-      }
+        content: input,
+      },
     ];
 
     return await this.makeRequest(messages);
@@ -114,12 +121,12 @@ Return a JSON object with this structure:
       "result": "what we get"
     }
   ]
-}`
+}`,
       },
       {
         role: 'user',
-        content: `Analyze this mathematical expression: ${expression}`
-      }
+        content: `Analyze this mathematical expression: ${expression}`,
+      },
     ];
 
     const response = await this.makeRequest(messages);
@@ -135,22 +142,22 @@ Return a JSON object with this structure:
       {
         role: 'system',
         content: `You are an expert mathematics tutor. Provide a clear, detailed explanation of the mathematical solution.
-        
+
 Focus on:
 - Why each step is necessary
 - Mathematical concepts and rules being applied
 - Common mistakes to avoid
 - Intuitive understanding
 
-Be conversational but precise.`
+Be conversational but precise.`,
       },
       {
         role: 'user',
         content: `Expression: ${expression}
 Current solution: ${currentSolution}
 
-Provide an enhanced explanation of this solution.`
-      }
+Provide an enhanced explanation of this solution.`,
+      },
     ];
 
     return await this.makeRequest(messages);
@@ -168,13 +175,13 @@ Provide:
 - Explanations of relevant concepts
 - Encouragement
 
-Be supportive and educational.`
+Be supportive and educational.`,
       },
       {
         role: 'user',
         content: `I'm working on: ${expression}
-My question: ${userQuestion}`
-      }
+My question: ${userQuestion}`,
+      },
     ];
 
     return await this.makeRequest(messages);
@@ -193,12 +200,12 @@ Return a JSON object:
   "difficulty": "difficulty level",
   "hints": ["hint1", "hint2", "hint3"],
   "solution": "complete solution with steps"
-}`
+}`,
       },
       {
         role: 'user',
-        content: `Generate a ${difficulty} level ${type} problem.`
-      }
+        content: `Generate a ${difficulty} level ${type} problem.`,
+      },
     ];
 
     const response = await this.makeRequest(messages);
@@ -217,12 +224,12 @@ Return a JSON object:
 
 Current context: ${context}
 
-Be helpful, accurate, and educational.`
+Be helpful, accurate, and educational.`,
       },
       {
         role: 'user',
-        content: userMessage
-      }
+        content: userMessage,
+      },
     ];
 
     return await this.makeRequest(messages);
